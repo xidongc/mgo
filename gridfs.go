@@ -315,7 +315,7 @@ func (gfs *GridFS) Find(query interface{}) *Query {
 
 // RemoveId deletes the file with the provided id from the GridFS.
 func (gfs *GridFS) RemoveId(id interface{}) error {
-	err := gfs.Files.Remove(bson.M{"_id": id})
+	_, err := gfs.Files.Remove(bson.M{"_id": id})
 	if err != nil {
 		return err
 	}
