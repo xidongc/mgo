@@ -2566,6 +2566,41 @@ func (c *Collection) Upsert(selector interface{}, update interface{}) (info *Cha
 	return info, err
 }
 
+// Same as Upsert, but sets multi to True so it can update multiple documents, but upsert if none
+// exist
+func (c *Collection) UpsertMulti(selector interface{}, update interface{}) (info *ChangeInfo, err error) {
+	if selector == nil {
+		selector = bson.D{}
+	}
+	op := updateOp{
+		Collection: c.FullName,
+		Selector:   selector,
+		Update:     update,
+		Flags:      1,
+		Upsert:     true,
+		Multi:      true,
+	}
+	var lerr *LastError
+	for i := 0; i < maxUpsertRetries; i++ {
+		lerr, err = c.writeOp(&op, true)
+		// Retry duplicate key errors on upserts.
+		// https://docs.mongodb.com/v3.2/reference/method/db.collection.update/#use-unique-indexes
+		if !IsDup(err) {
+			break
+		}
+	}
+	if err == nil && lerr != nil {
+		info = &ChangeInfo{}
+		if lerr.UpdatedExisting {
+			info.Matched = lerr.N
+			info.Updated = lerr.modified
+		} else {
+			info.UpsertedId = lerr.UpsertedId
+		}
+	}
+	return info, err
+}
+
 // UpsertId is a convenience helper equivalent to:
 //
 //     info, err := collection.Upsert(bson.M{"_id": id}, update)
