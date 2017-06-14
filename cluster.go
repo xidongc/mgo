@@ -45,6 +45,13 @@ import (
 // in a mongo cluster.  This works with individual servers, a replica set,
 // a replica pair, one or multiple mongos routers, etc.
 
+type LoadBalancingStrategy int
+
+const (
+	Original LoadBalancingStrategy = 0
+	Uniform  LoadBalancingStrategy = 1
+)
+
 type mongoCluster struct {
 	sync.RWMutex
 	serverSynced sync.Cond
@@ -61,9 +68,10 @@ type mongoCluster struct {
 	cachedIndex  map[string]bool
 	sync         chan bool
 	dial         dialer
+	lbstrategy   LoadBalancingStrategy
 }
 
-func newCluster(userSeeds []string, direct, failFast bool, dial dialer, setName string) *mongoCluster {
+func newCluster(userSeeds []string, direct, failFast bool, dial dialer, setName string, lbstrategy LoadBalancingStrategy) *mongoCluster {
 	cluster := &mongoCluster{
 		userSeeds:  userSeeds,
 		references: 1,
@@ -71,6 +79,7 @@ func newCluster(userSeeds []string, direct, failFast bool, dial dialer, setName 
 		failFast:   failFast,
 		dial:       dial,
 		setName:    setName,
+		lbstrategy: lbstrategy,
 	}
 	cluster.serverSynced.L = cluster.RWMutex.RLocker()
 	cluster.sync = make(chan bool, 1)
@@ -610,10 +619,15 @@ func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout 
 		}
 
 		var server *mongoServer
-		if slaveOk {
-			server = cluster.servers.BestFit(mode, serverTags)
-		} else {
-			server = cluster.masters.BestFit(mode, nil)
+		switch cluster.lbstrategy {
+		case Original:
+			if slaveOk {
+				server = cluster.servers.BestFit(mode, serverTags)
+			} else {
+				server = cluster.masters.BestFit(mode, nil)
+			}
+		case Uniform:
+			server = cluster.servers.UniformRandom()
 		}
 		cluster.RUnlock()
 

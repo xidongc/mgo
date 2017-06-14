@@ -346,6 +346,9 @@ type DialInfo struct {
 	// distinguish it from a slow server, so the timeout stays relevant.
 	FailFast bool
 
+	// Which load balancing strategy to use when selecting a server to do
+	// an operation on
+	LoadBalancingStrategy LoadBalancingStrategy
 	// Database is the default database name used when the Session.DB method
 	// is called with an empty name, and is also used during the initial
 	// authentication if Source is unset.
@@ -422,7 +425,7 @@ func DialWithInfo(info *DialInfo) (*Session, error) {
 		}
 		addrs[i] = addr
 	}
-	cluster := newCluster(addrs, info.Direct, info.FailFast, dialer{info.Dial, info.DialServer}, info.ReplicaSetName)
+	cluster := newCluster(addrs, info.Direct, info.FailFast, dialer{info.Dial, info.DialServer}, info.ReplicaSetName, info.LoadBalancingStrategy)
 	session := newSession(Eventual, cluster, info.Timeout)
 	session.defaultdb = info.Database
 	if session.defaultdb == "" {
