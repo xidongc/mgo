@@ -77,7 +77,7 @@ type mongoServerInfo struct {
 
 var defaultServerInfo mongoServerInfo
 
-func newServer(addr string, tcpaddr *net.TCPAddr, sync chan bool, dial dialer) *mongoServer {
+func newServer(addr string, tcpaddr *net.TCPAddr, sync chan bool, dial dialer, softPoolLimit int) *mongoServer {
 	server := &mongoServer{
 		Addr:         addr,
 		ResolvedAddr: tcpaddr.String(),
@@ -88,6 +88,7 @@ func newServer(addr string, tcpaddr *net.TCPAddr, sync chan bool, dial dialer) *
 		pingValue:    time.Hour, // Push it back before an actual ping.
 	}
 	go server.pinger(true)
+	go server.pruner(true, softPoolLimit)
 	return server
 }
 
@@ -111,7 +112,7 @@ func (server *mongoServer) AcquireSocket(poolLimit int, timeout time.Duration) (
 			return nil, abended, errServerClosed
 		}
 		n := len(server.unusedSockets)
-		if poolLimit > 0 && len(server.liveSockets)-n >= poolLimit {
+		if poolLimit > 0 && len(server.liveSockets) >= poolLimit && n <= 0 {
 			server.Unlock()
 			return nil, false, errPoolLimit
 		}
@@ -214,6 +215,23 @@ func (server *mongoServer) RecycleSocket(socket *mongoSocket) {
 	server.Unlock()
 }
 
+func removeSockets(sockets []*mongoSocket, toRemove []*mongoSocket) []*mongoSocket {
+	socketSet := make(map[*mongoSocket]bool, len(toRemove))
+
+	for _, r := range toRemove {
+		socketSet[r] = true
+	}
+
+	newSockets := make([]*mongoSocket, 0)
+	for i, s := range sockets {
+		if _, ok := socketSet[s]; !ok {
+			newSockets = append(newSockets, s)
+		}
+		sockets[i] = nil
+	}
+
+	return newSockets
+}
 func removeSocket(sockets []*mongoSocket, socket *mongoSocket) []*mongoSocket {
 	for i, s := range sockets {
 		if s == socket {
@@ -280,7 +298,54 @@ NextTagSet:
 }
 
 var pingDelay = 15 * time.Second
+var pruneDelay = 60 * time.Second
 
+func (server *mongoServer) pruner(loop bool, softPoolLimit int) {
+	var delay time.Duration
+	if raceDetector {
+		// This variable is only ever touched by tests.
+		globalMutex.Lock()
+		delay = pingDelay
+		globalMutex.Unlock()
+	} else {
+		delay = pruneDelay
+	}
+	for {
+		if loop {
+			time.Sleep(delay)
+		}
+		server.Lock()
+		numUnused := len(server.unusedSockets)
+		numSockets := len(server.liveSockets)
+		socketsToPrune := numSockets - softPoolLimit
+
+		if socketsToPrune <= 0 {
+			server.Unlock()
+			continue
+		}
+
+		var socketsToClose []*mongoSocket
+		if numUnused <= socketsToPrune {
+			socketsToClose = server.unusedSockets
+			server.unusedSockets = nil
+		} else {
+			socketsToClose = server.unusedSockets[numUnused-socketsToPrune+1:]
+			server.unusedSockets = server.unusedSockets[:numUnused-socketsToPrune+1]
+		}
+
+		server.liveSockets = removeSockets(server.liveSockets, socketsToClose)
+		server.Unlock()
+
+		for i, sock := range socketsToClose {
+			sock.Close()
+			socketsToClose[i] = nil
+		}
+
+		if !loop {
+			return
+		}
+	}
+}
 func (server *mongoServer) pinger(loop bool) {
 	var delay time.Duration
 	if raceDetector {

@@ -90,6 +90,7 @@ type Session struct {
 	dialCred         *Credential
 	creds            []Credential
 	poolLimit        int
+	softPoolLimit    int
 	bypassValidation bool
 }
 
@@ -349,6 +350,7 @@ type DialInfo struct {
 	// Which load balancing strategy to use when selecting a server to do
 	// an operation on
 	LoadBalancingStrategy LoadBalancingStrategy
+
 	// Database is the default database name used when the Session.DB method
 	// is called with an empty name, and is also used during the initial
 	// authentication if Source is unset.
@@ -386,6 +388,10 @@ type DialInfo struct {
 	// PoolLimit defines the per-server socket pool limit. Defaults to 4096.
 	// See Session.SetPoolLimit for details.
 	PoolLimit int
+
+	// SoftPoolLimit defines the per-server socket soft pool limit. Defaults to 4096.
+	// See Session.SetSoftPoolLimit for details.
+	SoftPoolLimit int
 
 	// DialServer optionally specifies the dial function for establishing
 	// connections with the MongoDB servers.
@@ -425,7 +431,7 @@ func DialWithInfo(info *DialInfo) (*Session, error) {
 		}
 		addrs[i] = addr
 	}
-	cluster := newCluster(addrs, info.Direct, info.FailFast, dialer{info.Dial, info.DialServer}, info.ReplicaSetName, info.LoadBalancingStrategy)
+	cluster := newCluster(addrs, info.Direct, info.FailFast, dialer{info.Dial, info.DialServer}, info.ReplicaSetName, info.LoadBalancingStrategy, info.SoftPoolLimit)
 	session := newSession(Eventual, cluster, info.Timeout)
 	session.defaultdb = info.Database
 	if session.defaultdb == "" {
@@ -456,6 +462,9 @@ func DialWithInfo(info *DialInfo) (*Session, error) {
 	}
 	if info.PoolLimit > 0 {
 		session.poolLimit = info.PoolLimit
+	}
+	if info.SoftPoolLimit > 0 {
+		session.softPoolLimit = info.SoftPoolLimit
 	}
 	cluster.Release()
 
@@ -527,10 +536,11 @@ func extractURL(s string) (*urlInfo, error) {
 func newSession(consistency Mode, cluster *mongoCluster, timeout time.Duration) (session *Session) {
 	cluster.Acquire()
 	session = &Session{
-		cluster_:    cluster,
-		syncTimeout: timeout,
-		sockTimeout: timeout,
-		poolLimit:   4096,
+		cluster_:      cluster,
+		syncTimeout:   timeout,
+		sockTimeout:   timeout,
+		poolLimit:     4096,
+		softPoolLimit: 4096,
 	}
 	debugf("New session %p on cluster %p", session, cluster)
 	session.SetMode(consistency, true)
@@ -1755,6 +1765,12 @@ func (s *Session) SetCursorTimeout(d time.Duration) {
 func (s *Session) SetPoolLimit(limit int) {
 	s.m.Lock()
 	s.poolLimit = limit
+	s.m.Unlock()
+}
+
+func (s *Session) SetSoftPoolLimit(limit int) {
+	s.m.Lock()
+	s.softPoolLimit = limit
 	s.m.Unlock()
 }
 

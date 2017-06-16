@@ -29,6 +29,7 @@ package mgo
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"strconv"
 	"strings"
@@ -54,32 +55,34 @@ const (
 
 type mongoCluster struct {
 	sync.RWMutex
-	serverSynced sync.Cond
-	userSeeds    []string
-	dynaSeeds    []string
-	servers      mongoServers
-	masters      mongoServers
-	references   int
-	syncing      bool
-	direct       bool
-	failFast     bool
-	syncCount    uint
-	setName      string
-	cachedIndex  map[string]bool
-	sync         chan bool
-	dial         dialer
-	lbstrategy   LoadBalancingStrategy
+	serverSynced  sync.Cond
+	userSeeds     []string
+	dynaSeeds     []string
+	servers       mongoServers
+	masters       mongoServers
+	references    int
+	syncing       bool
+	direct        bool
+	failFast      bool
+	syncCount     uint
+	setName       string
+	cachedIndex   map[string]bool
+	sync          chan bool
+	dial          dialer
+	lbstrategy    LoadBalancingStrategy
+	softPoolLimit int
 }
 
-func newCluster(userSeeds []string, direct, failFast bool, dial dialer, setName string, lbstrategy LoadBalancingStrategy) *mongoCluster {
+func newCluster(userSeeds []string, direct, failFast bool, dial dialer, setName string, lbstrategy LoadBalancingStrategy, softPoolLimit int) *mongoCluster {
 	cluster := &mongoCluster{
-		userSeeds:  userSeeds,
-		references: 1,
-		direct:     direct,
-		failFast:   failFast,
-		dial:       dial,
-		setName:    setName,
-		lbstrategy: lbstrategy,
+		userSeeds:     userSeeds,
+		references:    1,
+		direct:        direct,
+		failFast:      failFast,
+		dial:          dial,
+		setName:       setName,
+		lbstrategy:    lbstrategy,
+		softPoolLimit: softPoolLimit,
 	}
 	cluster.serverSynced.L = cluster.RWMutex.RLocker()
 	cluster.sync = make(chan bool, 1)
@@ -415,7 +418,7 @@ func (cluster *mongoCluster) server(addr string, tcpaddr *net.TCPAddr) *mongoSer
 	if server != nil {
 		return server
 	}
-	return newServer(addr, tcpaddr, cluster.sync, cluster.dial)
+	return newServer(addr, tcpaddr, cluster.sync, cluster.dial, cluster.softPoolLimit)
 }
 
 func resolveAddr(addr string) (*net.TCPAddr, error) {
@@ -590,6 +593,7 @@ func (cluster *mongoCluster) syncServersIteration(direct bool) {
 func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout time.Duration, socketTimeout time.Duration, serverTags []bson.D, poolLimit int) (s *mongoSocket, err error) {
 	var started time.Time
 	var syncCount uint
+	numFailedAcquires := 0
 	warnedLimit := false
 	for {
 		cluster.RLock()
@@ -643,7 +647,10 @@ func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout 
 				warnedLimit = true
 				log("WARNING: Per-server connection limit reached.")
 			}
-			time.Sleep(1e8)
+			if numFailedAcquires >= 4 {
+				return nil, errors.New("Failed to acquire socket in time")
+			}
+			time.Sleep(time.Duration(1e5 * math.Exp2(float64(numFailedAcquires))))
 			continue
 		}
 		if err != nil {
