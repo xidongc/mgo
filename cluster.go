@@ -643,7 +643,7 @@ func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout 
 				warnedLimit = true
 				log("WARNING: Per-server connection limit reached.")
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(1e8)
 			continue
 		}
 		if err != nil {
