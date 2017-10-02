@@ -3037,6 +3037,13 @@ func (q *Query) SetMaxTime(d time.Duration) *Query {
 	return q
 }
 
+func (q *Query) AllowPartial() *Query {
+	q.m.Lock()
+	q.op.AllowPartial()
+	q.m.Unlock()
+	return q
+}
+
 // Snapshot will force the performed query to make use of an available
 // index on the _id field to prevent the same document from being returned
 // more than once in a single iteration. This might happen without this
