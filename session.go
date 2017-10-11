@@ -3220,18 +3220,19 @@ func prepareFindOp(socket *mongoSocket, op *queryOp, limit int32) bool {
 	}
 
 	find := findCmd{
-		Collection:  op.collection[nameDot+1:],
-		Filter:      op.query,
-		Projection:  op.selector,
-		Sort:        op.options.OrderBy,
-		Skip:        op.skip,
-		Limit:       limit,
-		MaxTimeMS:   op.options.MaxTimeMS,
-		MaxScan:     op.options.MaxScan,
-		Hint:        op.options.Hint,
-		Comment:     op.options.Comment,
-		Snapshot:    op.options.Snapshot,
-		OplogReplay: op.flags&flagLogReplay != 0,
+		Collection:          op.collection[nameDot+1:],
+		Filter:              op.query,
+		Projection:          op.selector,
+		Sort:                op.options.OrderBy,
+		Skip:                op.skip,
+		Limit:               limit,
+		MaxTimeMS:           op.options.MaxTimeMS,
+		MaxScan:             op.options.MaxScan,
+		Hint:                op.options.Hint,
+		Comment:             op.options.Comment,
+		Snapshot:            op.options.Snapshot,
+		OplogReplay:         op.flags&flagLogReplay != 0,
+		AllowPartialResults: op.flags&flagPartial != 0,
 	}
 	if op.limit < 0 {
 		find.BatchSize = -op.limit
