@@ -2479,7 +2479,6 @@ func (c *Collection) Update(selector interface{}, update interface{}) (info *Cha
 		Update:     update,
 	}
 	lerr, err := c.writeOp(&op, true)
-	fmt.Println(lerr)
 	if err == nil && lerr != nil && !lerr.UpdatedExisting {
 		return &ChangeInfo{}, ErrNotFound
 	}
