@@ -154,7 +154,7 @@ type isMasterResult struct {
 
 func (cluster *mongoCluster) isMaster(socket *mongoSocket, result *isMasterResult) error {
 	// Monotonic let's it talk to a slave and still hold the socket.
-	session := newSession(Monotonic, cluster, 10*time.Second)
+	session := newSession(Monotonic, cluster, 10*time.Second, 10*time.Second)
 	session.setSocket(socket)
 	err := session.Run("ismaster", result)
 	session.Close()
@@ -199,7 +199,7 @@ func (cluster *mongoCluster) syncServer(server *mongoServer) (info *mongoServerI
 
 		// It's not clear what would be a good timeout here. Is it
 		// better to wait longer or to retry?
-		socket, _, err := server.AcquireSocket(0, syncTimeout)
+		socket, _, err := server.AcquireSocket(0, syncTimeout, syncTimeout)
 		if err != nil {
 			tryerr = err
 			logf("SYNC Failed to get socket to %s: %v", addr, err)
@@ -590,7 +590,7 @@ func (cluster *mongoCluster) syncServersIteration(direct bool) {
 // AcquireSocket returns a socket to a server in the cluster.  If slaveOk is
 // true, it will attempt to return a socket to a slave server.  If it is
 // false, the socket will necessarily be to a master server.
-func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout time.Duration, socketTimeout time.Duration, serverTags []bson.D, poolLimit int) (s *mongoSocket, err error) {
+func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout time.Duration, socketTimeout time.Duration, initialConnTimeout time.Duration, serverTags []bson.D, poolLimit int) (s *mongoSocket, err error) {
 	var started time.Time
 	var syncCount uint
 	numFailedAcquires := 0
@@ -641,7 +641,7 @@ func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout 
 			continue
 		}
 
-		s, abended, err := server.AcquireSocket(poolLimit, socketTimeout)
+		s, abended, err := server.AcquireSocket(poolLimit, socketTimeout, initialConnTimeout)
 		if err == errPoolLimit {
 			if !warnedLimit {
 				warnedLimit = true

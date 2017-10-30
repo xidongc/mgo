@@ -103,7 +103,7 @@ var errServerClosed = errors.New("server was closed")
 // If the poolLimit argument is greater than zero and the number of sockets in
 // use in this server is greater than the provided limit, errPoolLimit is
 // returned.
-func (server *mongoServer) AcquireSocket(poolLimit int, timeout time.Duration) (socket *mongoSocket, abended bool, err error) {
+func (server *mongoServer) AcquireSocket(poolLimit int, timeout time.Duration, initialConnTimeout time.Duration) (socket *mongoSocket, abended bool, err error) {
 	for {
 		server.Lock()
 		abended = server.abended
@@ -125,13 +125,14 @@ func (server *mongoServer) AcquireSocket(poolLimit int, timeout time.Duration) (
 			if socket == nil {
 				continue
 			}
-			err = socket.InitialAcquire(info, timeout)
+			err = socket.InitialAcquire(info, initialConnTimeout)
 			if err != nil {
 				continue
 			}
+			socket.SetTimeout(timeout)
 		} else {
 			server.Unlock()
-			socket, err = server.Connect(timeout)
+			socket, err = server.Connect(initialConnTimeout)
 			if err == nil {
 				server.Lock()
 				// We've waited for the Connect, see if we got
@@ -142,6 +143,7 @@ func (server *mongoServer) AcquireSocket(poolLimit int, timeout time.Duration) (
 					socket.Close()
 					return nil, abended, errServerClosed
 				}
+				socket.SetTimeout(timeout)
 				server.liveSockets = append(server.liveSockets, socket)
 				server.Unlock()
 			}
@@ -370,7 +372,7 @@ func (server *mongoServer) pinger(loop bool) {
 			time.Sleep(delay)
 		}
 		op := op
-		socket, _, err := server.AcquireSocket(0, delay)
+		socket, _, err := server.AcquireSocket(0, delay, delay)
 		if err == nil {
 			start := time.Now()
 			_, _ = socket.SimpleQuery(&op)

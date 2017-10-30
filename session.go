@@ -75,23 +75,24 @@ const (
 // multiple goroutines will cause them to share the same underlying socket.
 // See the documentation on Session.SetMode for more details.
 type Session struct {
-	m                sync.RWMutex
-	cluster_         *mongoCluster
-	slaveSocket      *mongoSocket
-	masterSocket     *mongoSocket
-	slaveOk          bool
-	consistency      Mode
-	queryConfig      query
-	safeOp           *queryOp
-	syncTimeout      time.Duration
-	sockTimeout      time.Duration
-	defaultdb        string
-	sourcedb         string
-	dialCred         *Credential
-	creds            []Credential
-	poolLimit        int
-	softPoolLimit    int
-	bypassValidation bool
+	m                  sync.RWMutex
+	cluster_           *mongoCluster
+	slaveSocket        *mongoSocket
+	masterSocket       *mongoSocket
+	slaveOk            bool
+	consistency        Mode
+	queryConfig        query
+	safeOp             *queryOp
+	syncTimeout        time.Duration
+	sockTimeout        time.Duration
+	initialConnTimeout time.Duration
+	defaultdb          string
+	sourcedb           string
+	dialCred           *Credential
+	creds              []Credential
+	poolLimit          int
+	softPoolLimit      int
+	bypassValidation   bool
 }
 
 type Database struct {
@@ -333,9 +334,11 @@ type DialInfo struct {
 	// specified seed servers, or to obtain information for the whole
 	// cluster and establish connections with further servers too.
 	Direct bool
+	// InitialConnectTimeout is the amount of time to wait for a server to respond when
+	// first connecting
+	InitialConnectTimeout time.Duration
 
-	// Timeout is the amount of time to wait for a server to respond when
-	// first connecting and on follow up operations in the session. If
+	// Timeout for follow up operations in the session. If
 	// timeout is zero, the call may block forever waiting for a connection
 	// to be established. Timeout does not affect logic in DialServer.
 	Timeout time.Duration
@@ -432,7 +435,7 @@ func DialWithInfo(info *DialInfo) (*Session, error) {
 		addrs[i] = addr
 	}
 	cluster := newCluster(addrs, info.Direct, info.FailFast, dialer{info.Dial, info.DialServer}, info.ReplicaSetName, info.LoadBalancingStrategy, info.SoftPoolLimit)
-	session := newSession(Eventual, cluster, info.Timeout)
+	session := newSession(Eventual, cluster, info.Timeout, info.InitialConnectTimeout)
 	session.defaultdb = info.Database
 	if session.defaultdb == "" {
 		session.defaultdb = "test"
@@ -533,14 +536,15 @@ func extractURL(s string) (*urlInfo, error) {
 	return info, nil
 }
 
-func newSession(consistency Mode, cluster *mongoCluster, timeout time.Duration) (session *Session) {
+func newSession(consistency Mode, cluster *mongoCluster, timeout time.Duration, initialConnectTimeout time.Duration) (session *Session) {
 	cluster.Acquire()
 	session = &Session{
-		cluster_:      cluster,
-		syncTimeout:   timeout,
-		sockTimeout:   timeout,
-		poolLimit:     4096,
-		softPoolLimit: 4096,
+		cluster_:           cluster,
+		syncTimeout:        timeout,
+		sockTimeout:        timeout,
+		initialConnTimeout: initialConnectTimeout,
+		poolLimit:          4096,
+		softPoolLimit:      4096,
 	}
 	debugf("New session %p on cluster %p", session, cluster)
 	session.SetMode(consistency, true)
@@ -1737,6 +1741,12 @@ func (s *Session) SetSocketTimeout(d time.Duration) {
 	if s.slaveSocket != nil {
 		s.slaveSocket.SetTimeout(d)
 	}
+	s.m.Unlock()
+}
+
+func (s *Session) SetInitialConnectTimeout(d time.Duration) {
+	s.m.Lock()
+	s.initialConnTimeout = d
 	s.m.Unlock()
 }
 
@@ -3942,9 +3952,10 @@ func (iter *Iter) acquireSocket() (*mongoSocket, error) {
 		// to primary. Our cursor is in a specific server, though.
 		iter.session.m.Lock()
 		sockTimeout := iter.session.sockTimeout
+		initialConnTimeout := iter.session.initialConnTimeout
 		iter.session.m.Unlock()
 		socket.Release()
-		socket, _, err = iter.server.AcquireSocket(0, sockTimeout)
+		socket, _, err = iter.server.AcquireSocket(0, sockTimeout, initialConnTimeout)
 		if err != nil {
 			return nil, err
 		}
@@ -4508,7 +4519,7 @@ func (s *Session) acquireSocket(slaveOk bool) (*mongoSocket, error) {
 	}
 
 	// Still not good.  We need a new socket.
-	sock, err := s.cluster().AcquireSocket(s.consistency, slaveOk && s.slaveOk, s.syncTimeout, s.sockTimeout, s.queryConfig.op.serverTags, s.poolLimit)
+	sock, err := s.cluster().AcquireSocket(s.consistency, slaveOk && s.slaveOk, s.syncTimeout, s.sockTimeout, s.initialConnTimeout, s.queryConfig.op.serverTags, s.poolLimit)
 	if err != nil {
 		return nil, err
 	}
