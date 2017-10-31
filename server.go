@@ -166,7 +166,7 @@ func (server *mongoServer) Connect(timeout time.Duration) (*mongoSocket, error) 
 	case !dial.isSet():
 		// Cannot do this because it lacks timeout support. :-(
 		//conn, err = net.DialTCP("tcp", nil, server.tcpaddr)
-		conn, err = net.DialTimeout("tcp", server.ResolvedAddr, timeout)
+		conn, err = net.DialTimeout("tcp", server.ResolvedAddr, time.Second*2)
 		if tcpconn, ok := conn.(*net.TCPConn); ok {
 			tcpconn.SetKeepAlive(true)
 		} else if err == nil {
