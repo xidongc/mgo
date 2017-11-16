@@ -1,12 +1,13 @@
 package bson_test
 
 import (
-	"gopkg.in/mgo.v2/bson"
-
-	. "gopkg.in/check.v1"
 	"reflect"
 	"strings"
 	"time"
+
+	. "gopkg.in/check.v1"
+
+	"github.com/ContextLogic/mgo/bson"
 )
 
 type jsonTest struct {
