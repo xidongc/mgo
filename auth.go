@@ -34,8 +34,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ContextLogic/mgo/bson"
 	"github.com/ContextLogic/mgo/internal/scram"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type authCmd struct {

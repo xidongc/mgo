@@ -7,18 +7,17 @@
 package txn
 
 import (
+	crand "crypto/rand"
 	"encoding/binary"
 	"fmt"
+	mrand "math/rand"
 	"reflect"
 	"sort"
 	"strings"
 	"sync"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-
-	crand "crypto/rand"
-	mrand "math/rand"
+	"github.com/ContextLogic/mgo"
+	"github.com/ContextLogic/mgo/bson"
 )
 
 type state int

@@ -3,8 +3,8 @@ package txn
 import (
 	"fmt"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/ContextLogic/mgo"
+	"github.com/ContextLogic/mgo/bson"
 )
 
 func flush(r *Runner, t *transaction) error {
