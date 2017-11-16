@@ -2,8 +2,10 @@ package txn
 
 import (
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
+
 	. "gopkg.in/check.v1"
+
+	"github.com/ContextLogic/mgo/bson"
 )
 
 type TarjanSuite struct{}

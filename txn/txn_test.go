@@ -8,10 +8,11 @@ import (
 	"time"
 
 	. "gopkg.in/check.v1"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/mgo.v2/dbtest"
-	"gopkg.in/mgo.v2/txn"
+
+	"github.com/ContextLogic/mgo"
+	"github.com/ContextLogic/mgo/bson"
+	"github.com/ContextLogic/mgo/dbtest"
+	"github.com/ContextLogic/mgo/txn"
 )
 
 func TestAll(t *testing.T) {

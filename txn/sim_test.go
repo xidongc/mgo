@@ -2,13 +2,15 @@ package txn_test
 
 import (
 	"flag"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/mgo.v2/dbtest"
-	"gopkg.in/mgo.v2/txn"
-	. "gopkg.in/check.v1"
 	"math/rand"
 	"time"
+
+	. "gopkg.in/check.v1"
+
+	"github.com/ContextLogic/mgo"
+	"github.com/ContextLogic/mgo/bson"
+	"github.com/ContextLogic/mgo/dbtest"
+	"github.com/ContextLogic/mgo/txn"
 )
 
 var (
