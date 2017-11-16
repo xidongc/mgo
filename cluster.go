@@ -364,7 +364,9 @@ func (cluster *mongoCluster) syncServersLoop() {
 		direct := cluster.direct
 		cluster.Unlock()
 
-		cluster.syncServersIteration(direct)
+		// Disable syncing servers for now, doesn't make sense in an architecture
+		// using mongos
+		//cluster.syncServersIteration(direct)
 
 		// We just synchronized, so consume any outstanding requests.
 		select {
