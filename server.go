@@ -332,6 +332,11 @@ func (server *mongoServer) pruner(loop bool, softPoolLimit int) {
 			time.Sleep(delay)
 		}
 		server.Lock()
+		if server.closed {
+			server.Unlock()
+			return
+		}
+
 		numUnused := len(server.unusedSockets)
 		numSockets := len(server.liveSockets)
 		socketsToPrune := numSockets - softPoolLimit
