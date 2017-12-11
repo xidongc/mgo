@@ -76,6 +76,9 @@ type Stats struct {
 	SocketsAlive int
 	SocketsInUse int
 	SocketRefs   int
+
+	Pruners int
+	Pingers int
 }
 
 func (stats *Stats) cluster(delta int) {
@@ -144,4 +147,38 @@ func (stats *Stats) socketRefs(delta int) {
 		stats.SocketRefs += delta
 		statsMutex.Unlock()
 	}
+}
+
+func (stats *Stats) PrunerCreated() {
+	stats.prune(1)
+}
+
+func (stats *Stats) PrunerExited() {
+	stats.prune(-1)
+}
+
+func (stats *Stats) prune(delta int) {
+	if stats == nil {
+		return
+	}
+	statsMutex.Lock()
+	stats.Pruners += delta
+	statsMutex.Unlock()
+}
+
+func (stats *Stats) PingerCreated() {
+	stats.pinger(1)
+}
+
+func (stats *Stats) PingerExited() {
+	stats.pinger(-1)
+}
+
+func (stats *Stats) pinger(delta int) {
+	if stats == nil {
+		return
+	}
+	statsMutex.Lock()
+	stats.Pingers += delta
+	statsMutex.Unlock()
 }

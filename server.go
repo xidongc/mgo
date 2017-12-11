@@ -320,6 +320,9 @@ var pingDelay = 15 * time.Second
 var pruneDelay = 60 * time.Second
 
 func (server *mongoServer) pruner(loop bool, softPoolLimit int) {
+	stats.PrunerCreated()
+	defer stats.PrunerExited()
+
 	var delay time.Duration
 	if raceDetector {
 		// This variable is only ever touched by tests.
@@ -370,7 +373,11 @@ func (server *mongoServer) pruner(loop bool, softPoolLimit int) {
 		}
 	}
 }
+
 func (server *mongoServer) pinger(loop bool) {
+	stats.PingerCreated()
+	defer stats.PingerExited()
+
 	var delay time.Duration
 	if raceDetector {
 		// This variable is only ever touched by tests.
