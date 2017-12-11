@@ -89,6 +89,9 @@ func newServer(addr string, tcpaddr *net.TCPAddr, sync chan bool, dial dialer, s
 	}
 	go server.pinger(true)
 	go server.pruner(true, softPoolLimit)
+
+	stats.ServerCreated()
+
 	return server
 }
 
@@ -192,12 +195,14 @@ func (server *mongoServer) Connect(timeout time.Duration) (*mongoSocket, error) 
 // Close forces closing all sockets that are alive, whether
 // they're currently in use or not.
 func (server *mongoServer) Close() {
+	stats.ServerClosed()
 	server.close(false)
 }
 
 // CloseIdle closing all sockets that are idle,
 // sockets currently in use will be closed after idle.
 func (server *mongoServer) CloseIdle() {
+	stats.ServerClosedIdle()
 	server.close(true)
 }
 
@@ -320,6 +325,9 @@ var pingDelay = 15 * time.Second
 var pruneDelay = 60 * time.Second
 
 func (server *mongoServer) pruner(loop bool, softPoolLimit int) {
+	stats.PrunerCreated()
+	defer stats.PrunerExited()
+
 	var delay time.Duration
 	if raceDetector {
 		// This variable is only ever touched by tests.
@@ -370,7 +378,11 @@ func (server *mongoServer) pruner(loop bool, softPoolLimit int) {
 		}
 	}
 }
+
 func (server *mongoServer) pinger(loop bool) {
+	stats.PingerCreated()
+	defer stats.PingerExited()
+
 	var delay time.Duration
 	if raceDetector {
 		// This variable is only ever touched by tests.
