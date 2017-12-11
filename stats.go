@@ -79,6 +79,14 @@ type Stats struct {
 
 	Pruners int
 	Pingers int
+
+	ServerCreates    int
+	ServerCloses     int
+	ServerCloseIdles int
+
+	SocketCreates    int
+	SocketCloses     int
+	SocketCloseIdles int
 }
 
 func (stats *Stats) cluster(delta int) {
@@ -180,5 +188,59 @@ func (stats *Stats) pinger(delta int) {
 	}
 	statsMutex.Lock()
 	stats.Pingers += delta
+	statsMutex.Unlock()
+}
+
+func (stats *Stats) ServerCreated() {
+	if stats == nil {
+		return
+	}
+	statsMutex.Lock()
+	stats.ServerCreates += 1
+	statsMutex.Unlock()
+}
+
+func (stats *Stats) ServerClosed() {
+	if stats == nil {
+		return
+	}
+	statsMutex.Lock()
+	stats.ServerCloses += 1
+	statsMutex.Unlock()
+}
+
+func (stats *Stats) ServerClosedIdle() {
+	if stats == nil {
+		return
+	}
+	statsMutex.Lock()
+	stats.ServerCloseIdles += 1
+	statsMutex.Unlock()
+}
+
+func (stats *Stats) SocketCreated() {
+	if stats == nil {
+		return
+	}
+	statsMutex.Lock()
+	stats.SocketCreates += 1
+	statsMutex.Unlock()
+}
+
+func (stats *Stats) SocketClosed() {
+	if stats == nil {
+		return
+	}
+	statsMutex.Lock()
+	stats.SocketCloses += 1
+	statsMutex.Unlock()
+}
+
+func (stats *Stats) SocketClosedIdle() {
+	if stats == nil {
+		return
+	}
+	statsMutex.Lock()
+	stats.SocketCloseIdles += 1
 	statsMutex.Unlock()
 }
