@@ -228,6 +228,8 @@ func (server *mongoServer) RecycleSocket(socket *mongoSocket) {
 	server.Lock()
 	if !server.closed {
 		server.unusedSockets = append(server.unusedSockets, socket)
+	} else {
+		socket.Close()
 	}
 	server.Unlock()
 }
