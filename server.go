@@ -369,8 +369,10 @@ func (server *mongoServer) pruner(loop bool, softPoolLimit int) {
 		server.Unlock()
 
 		for i, sock := range socketsToClose {
-			sock.Close()
-			socketsToClose[i] = nil
+			if sock != nil {
+				sock.Close()
+				socketsToClose[i] = nil
+			}
 		}
 
 		if !loop {
