@@ -82,6 +82,7 @@ type queryOp struct {
 	options    queryWrapper
 	hasOptions bool
 	serverTags []bson.D
+	readConcern string
 }
 
 type queryWrapper struct {
