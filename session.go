@@ -3228,6 +3228,10 @@ func prepareFindOp(socket *mongoSocket, op *queryOp, limit int32) bool {
 		panic("invalid query collection name: " + op.collection)
 	}
 
+	readConcern := bson.D{}
+	if op.readConcern != "" {
+		readConcern = bson.D{{"level", op.readConcern}}
+	}
 	find := findCmd{
 		Collection:          op.collection[nameDot+1:],
 		Filter:              op.query,
@@ -3242,7 +3246,7 @@ func prepareFindOp(socket *mongoSocket, op *queryOp, limit int32) bool {
 		Snapshot:            op.options.Snapshot,
 		OplogReplay:         op.flags&flagLogReplay != 0,
 		AllowPartialResults: op.flags&flagPartial != 0,
-		ReadConcern:         bson.D{{"level", op.readConcern}},
+		ReadConcern:         readConcern,
 	}
 
 	if op.limit < 0 {
