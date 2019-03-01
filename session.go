@@ -3242,7 +3242,7 @@ func prepareFindOp(socket *mongoSocket, op *queryOp, limit int32) bool {
 		Snapshot:            op.options.Snapshot,
 		OplogReplay:         op.flags&flagLogReplay != 0,
 		AllowPartialResults: op.flags&flagPartial != 0,
-		ReadConcern:         bson.D{{"level": op.readConcern}},
+		ReadConcern:         bson.D{{"level", op.readConcern}},
 	}
 
 	if op.limit < 0 {
