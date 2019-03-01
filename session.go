@@ -3242,7 +3242,7 @@ func prepareFindOp(socket *mongoSocket, op *queryOp, limit int32) bool {
 		Snapshot:            op.options.Snapshot,
 		OplogReplay:         op.flags&flagLogReplay != 0,
 		AllowPartialResults: op.flags&flagPartial != 0,
-		ReadConcern: readLevel{level: op.readConcern},
+		ReadConcern:         bson.D{{"level": op.readConcern}},
 	}
 
 	if op.limit < 0 {
@@ -3294,7 +3294,7 @@ type findCmd struct {
 	Comment             string      `bson:"comment,omitempty"`
 	MaxScan             int         `bson:"maxScan,omitempty"`
 	MaxTimeMS           int         `bson:"maxTimeMS,omitempty"`
-	ReadConcern         readLevel   `bson:"readConcern,omitempty"`
+	ReadConcern         interface{} `bson:"readConcern,omitempty"`
 	Max                 interface{} `bson:"max,omitempty"`
 	Min                 interface{} `bson:"min,omitempty"`
 	ReturnKey           bool        `bson:"returnKey,omitempty"`
@@ -3305,12 +3305,6 @@ type findCmd struct {
 	OplogReplay         bool        `bson:"oplogReplay,omitempty"`
 	NoCursorTimeout     bool        `bson:"noCursorTimeout,omitempty"`
 	AllowPartialResults bool        `bson:"allowPartialResults,omitempty"`
-}
-
-// readLevel provides the nested "level: majority" serialisation needed for the
-// query read concern.
-type readLevel struct {
-	level string `bson:"level,omitempty"`
 }
 
 // getMoreCmd holds the command used for requesting more query results on MongoDB 3.2+.
