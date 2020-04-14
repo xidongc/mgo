@@ -29,7 +29,7 @@ package mgo_test
 import (
 	. "gopkg.in/check.v1"
 
-	"github.com/ContextLogic/mgo"
+	"github.com/xidongc-wish/mgo"
 )
 
 func (s *S) TestBulkInsert(c *C) {

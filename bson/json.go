@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ContextLogic/mgo/internal/json"
+	"github.com/xidongc-wish/mgo/internal/json"
 )
 
 // UnmarshalJSON unmarshals a JSON value that may hold non-standard

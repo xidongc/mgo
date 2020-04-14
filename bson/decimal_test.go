@@ -35,7 +35,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/ContextLogic/mgo/bson"
+	"github.com/xidongc-wish/mgo/bson"
 )
 
 // --------------------------------------------------------------------------

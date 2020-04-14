@@ -38,8 +38,8 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/ContextLogic/mgo"
-	"github.com/ContextLogic/mgo/bson"
+	"github.com/xidongc-wish/mgo"
+	"github.com/xidongc-wish/mgo/bson"
 )
 
 func (s *S) TestNewSession(c *C) {

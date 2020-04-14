@@ -40,7 +40,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/ContextLogic/mgo"
+	"github.com/xidongc-wish/mgo"
 )
 
 func (s *S) TestAuthLoginDatabase(c *C) {

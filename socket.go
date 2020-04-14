@@ -33,7 +33,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ContextLogic/mgo/bson"
+	"github.com/xidongc-wish/mgo/bson"
 )
 
 type replyFunc func(err error, reply *replyOp, docNum int, docData []byte)

@@ -42,7 +42,7 @@ import (
 	. "gopkg.in/check.v1"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/ContextLogic/mgo/bson"
+	"github.com/xidongc-wish/mgo/bson"
 )
 
 func TestAll(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/ContextLogic/mgo/internal/scram"
+	"github.com/xidongc-wish/mgo/internal/scram"
 )
 
 var _ = Suite(&S{})

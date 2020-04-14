@@ -11,7 +11,7 @@ import (
 
 	tomb "gopkg.in/tomb.v2"
 
-	"github.com/ContextLogic/mgo"
+	"github.com/xidongc-wish/mgo"
 )
 
 // DBServer controls a MongoDB server process to be used within test suites.
