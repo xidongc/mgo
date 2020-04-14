@@ -28,6 +28,7 @@ package mgo
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"sort"
@@ -527,7 +528,7 @@ func (servers *mongoServers) UniformRandom() *mongoServer {
 type SpeedyChecker func(*mongoServer) error
 
 func Racer(server *mongoServer) (err error) {
-	_, err = net.Dial("tcp", server.tcpaddr.IP.String() + strconv.Itoa(server.tcpaddr.Port))
+	_, err = net.Dial("tcp", server.tcpaddr.IP.String() + ":" + strconv.Itoa(server.tcpaddr.Port))
 	return
 }
 
@@ -536,18 +537,19 @@ func (servers *mongoServers) FasterWin(sc SpeedyChecker) *mongoServer {
 	timeout := 1 * time.Second
 
 	for _, next := range servers.slice {
-		go func() {
+		go func(*mongoServer) {
 			if err := sc(next); err == nil {
 				ch <- next
+			} else {
+				fmt.Println(err)
 			}
-		}()
+		}(next)
 	}
 
 	select {
 	case best := <- ch:
 		return best
 	case <- time.After(timeout):
-		logf("connect timeout after: %s", timeout.String())
 		return servers.slice[rand.Int31n(int32(len(servers.slice)))]
 	}
 }
