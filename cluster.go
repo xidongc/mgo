@@ -51,6 +51,7 @@ type LoadBalancingStrategy int
 const (
 	Original LoadBalancingStrategy = 0
 	Uniform  LoadBalancingStrategy = 1
+	Fastest	 LoadBalancingStrategy = 2
 )
 
 type mongoCluster struct {
@@ -632,7 +633,10 @@ func (cluster *mongoCluster) AcquireSocket(mode Mode, slaveOk bool, syncTimeout 
 			}
 		case Uniform:
 			server = cluster.servers.UniformRandom()
+		case Fastest:
+			server = cluster.servers.FasterWin(Racer)
 		}
+
 		cluster.RUnlock()
 
 		if server == nil {

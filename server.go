@@ -31,6 +31,7 @@ import (
 	"math/rand"
 	"net"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -521,6 +522,34 @@ func (servers *mongoServers) UniformRandom() *mongoServer {
 	var best *mongoServer
 	best = servers.slice[rand.Int31n(int32(len(servers.slice)))]
 	return best
+}
+
+type SpeedyChecker func(*mongoServer) error
+
+func Racer(server *mongoServer) (err error) {
+	_, err = net.Dial("tcp", server.tcpaddr.IP.String() + strconv.Itoa(server.tcpaddr.Port))
+	return
+}
+
+func (servers *mongoServers) FasterWin(sc SpeedyChecker) *mongoServer {
+	ch := make(chan *mongoServer)
+	timeout := 1 * time.Second
+
+	for _, next := range servers.slice {
+		go func() {
+			if err := sc(next); err == nil {
+				ch <- next
+			}
+		}()
+	}
+
+	select {
+	case best := <- ch:
+		return best
+	case <- time.After(timeout):
+		logf("connect timeout after: %s", timeout.String())
+		return servers.slice[rand.Int31n(int32(len(servers.slice)))]
+	}
 }
 
 // BestFit returns the best guess of what would be the most interesting
