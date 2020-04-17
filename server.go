@@ -528,7 +528,8 @@ func (servers *mongoServers) UniformRandom() *mongoServer {
 type SpeedyChecker func(*mongoServer) error
 
 func Racer(server *mongoServer) (err error) {
-	_, err = net.Dial("tcp", server.tcpaddr.IP.String() + ":" + strconv.Itoa(server.tcpaddr.Port))
+	session, err := net.Dial("tcp", server.tcpaddr.IP.String() + ":" + strconv.Itoa(server.tcpaddr.Port))
+	defer session.Close()
 	return
 }
 

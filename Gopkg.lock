@@ -2,6 +2,33 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:125f098c5294814b5d9ce2194f03a435c35a6208f029e61681bed9a893d68133"
+  name = "github.com/alecthomas/template"
+  packages = [
+    ".",
+    "parse",
+  ]
+  pruneopts = "UT"
+  revision = "fb15b899a75114aa79cc930e33c46b577cc664b1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f780e2e814981de9dbdc2ca49d6c91d4aa4e2a1639ebc4106fafb0dc54fa5bd8"
+  name = "github.com/alecthomas/units"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f65c72e2690dc4b403c8bd637baf4611cd4c069b"
+
+[[projects]]
+  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
+
+[[projects]]
   digest = "1:7218fd69ff5436d016101bbc6183cdc289aa45ac37b48e78846318e4ef389bea"
   name = "github.com/kr/text"
   packages = ["."]
@@ -18,12 +45,49 @@
   revision = "a10e7caefd8e0d600cea437f5c3613aeb1553d56"
 
 [[projects]]
+  digest = "1:2226c7969bd90f6d3cb7a552e20283f3a762f30da23057d99857b1f7c2a6d8b7"
+  name = "github.com/prometheus/common"
+  packages = ["log"]
+  pruneopts = "UT"
+  revision = "d978bcb1309602d68bb4ba69cf3f8ed900e07308"
+  version = "v0.9.1"
+
+[[projects]]
+  digest = "1:0599141a8403114d34f1e546604ad6c5361b70dfa80e80c635f438cdbf71b43a"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d417be0fe654de640a82370515129985b407c7e3"
+  version = "v1.5.0"
+
+[[projects]]
   branch = "master"
   digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
   name = "golang.org/x/net"
   packages = ["context"]
   pruneopts = "UT"
   revision = "d3edc9973b7eb1fb302b0ff2c62357091cea9a30"
+
+[[projects]]
+  branch = "master"
+  digest = "1:01742808aac4007d18240bf37bd8f9ec6e131bc84262ec8f5dd1d03dc60c8be0"
+  name = "golang.org/x/sys"
+  packages = [
+    "unix",
+    "windows",
+    "windows/registry",
+    "windows/svc/eventlog",
+  ]
+  pruneopts = "UT"
+  revision = "669c56c373c468cbe0f0c12b7939832b26088d33"
+
+[[projects]]
+  digest = "1:c06d9e11d955af78ac3bbb26bd02e01d2f61f689e1a3bce2ef6fb683ef8a7f2d"
+  name = "gopkg.in/alecthomas/kingpin.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
+  version = "v2.2.6"
 
 [[projects]]
   branch = "v1"
@@ -53,6 +117,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/prometheus/common/log",
     "gopkg.in/check.v1",
     "gopkg.in/tomb.v2",
     "gopkg.in/yaml.v2",
